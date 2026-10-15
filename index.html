@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>待办</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500&family=Noto+Serif+SC:wght@500;600&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --paper: #e7e1cf;
+      --paper-deep: #dcd4be;
+      --ink: #1f231c;
+      --mute: #5c5a4e;
+      --rule: rgba(46, 62, 78, 0.16);
+      --forest: #2c4a3a;
+      --danger: #6b2e24;
+      --col: 36rem;
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+      margin: 0;
+      min-height: 100%;
+    }
+
+    body {
+      font-family: "Noto Sans SC", "PingFang SC", sans-serif;
+      color: var(--ink);
+      background:
+        radial-gradient(120% 80% at 50% -10%, #f3ecda 0%, transparent 55%),
+        repeating-linear-gradient(
+          0deg,
+          transparent,
+          transparent 31px,
+          var(--rule) 31px,
+          var(--rule) 32px
+        ),
+        var(--paper);
+      background-attachment: fixed;
+    }
+
+    .page {
+      max-width: var(--col);
+      margin: 0 auto;
+      padding: 12vh 1.5rem 4rem;
+    }
+
+    header {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      align-items: baseline;
+      gap: 1rem;
+      margin-bottom: 1.75rem;
+    }
+
+    h1 {
+      margin: 0;
+      font-family: "Noto Serif SC", serif;
+      font-weight: 600;
+      font-size: clamp(2.4rem, 6vw, 3.4rem);
+      letter-spacing: 0.08em;
+      line-height: 1;
+      text-wrap: pretty;
+    }
+
+    .count {
+      margin: 0;
+      color: var(--mute);
+      font-size: 0.9rem;
+      letter-spacing: 0.06em;
+    }
+
+    form {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 0.75rem;
+      align-items: end;
+      position: sticky;
+      top: 0;
+      z-index: 2;
+      padding: 0.6rem 0 1.1rem;
+      background: linear-gradient(var(--paper) 70%, transparent);
+    }
+
+    label.sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip: rect(0 0 0 0);
+    }
+
+    input[type="text"] {
+      width: 100%;
+      border: 0;
+      border-bottom: 1.5px solid var(--ink);
+      background: transparent;
+      padding: 0.55rem 0.1rem;
+      font: inherit;
+      font-size: 1.05rem;
+      color: var(--ink);
+      outline: none;
+      transition: border-color 180ms ease, transform 180ms ease;
+    }
+
+    input[type="text"]::placeholder {
+      color: #8a8678;
+    }
+
+    input[type="text"]:focus {
+      border-bottom-width: 2px;
+      transform: translateY(-1px);
+    }
+
+    button {
+      font: inherit;
+      cursor: pointer;
+      border: 0;
+      background: none;
+      color: inherit;
+    }
+
+    .add {
+      padding: 0.4rem 0.1rem 0.55rem;
+      font-weight: 500;
+      letter-spacing: 0.18em;
+      color: var(--forest);
+      border-bottom: 1.5px solid transparent;
+    }
+
+    .add:hover { border-bottom-color: var(--forest); }
+
+    .list {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+    }
+
+    .item {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 1rem;
+      align-items: center;
+      padding: 0.85rem 0;
+      border-bottom: 1px solid var(--rule);
+      animation: rise 280ms ease both;
+    }
+
+    @keyframes rise {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: none; }
+    }
+
+    .text {
+      font-size: 1.05rem;
+      line-height: 1.55;
+      text-wrap: pretty;
+      word-break: break-word;
+    }
+
+    .item.done .text {
+      color: var(--mute);
+      text-decoration: line-through;
+      text-decoration-thickness: 1px;
+      text-decoration-color: rgba(31, 35, 28, 0.45);
+    }
+
+    .actions {
+      display: flex;
+      gap: 0.85rem;
+      flex-shrink: 0;
+    }
+
+    .actions button {
+      font-size: 0.82rem;
+      letter-spacing: 0.12em;
+      color: var(--mute);
+      padding: 0.15rem 0;
+    }
+
+    .done-btn:hover { color: var(--forest); }
+    .del-btn:hover { color: var(--danger); }
+
+    .empty {
+      margin: 2.4rem 0 0;
+      color: var(--mute);
+      font-family: "Noto Serif SC", serif;
+      font-size: 1.05rem;
+    }
+
+    .empty[hidden] { display: none; }
+
+    @media (max-width: 520px) {
+      .page { padding-top: 8vh; }
+      .item {
+        grid-template-columns: 1fr;
+        gap: 0.4rem;
+      }
+      .actions { justify-content: flex-end; }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <header>
+      <h1>待办</h1>
+      <p class="count" id="count" aria-live="polite">0 项未完成</p>
+    </header>
+
+    <form id="form">
+      <label class="sr-only" for="input">新待办</label>
+      <input id="input" type="text" placeholder="写下一件要做的事" autocomplete="off" maxlength="120" />
+      <button class="add" type="submit">添加</button>
+    </form>
+
+    <ul class="list" id="list" aria-label="待办列表"></ul>
+    <p class="empty" id="empty">纸还是空白的，在上方写一条</p>
+  </main>
+
+  <script>
+    const KEY = "paper-todo-items";
+    const form = document.getElementById("form");
+    const input = document.getElementById("input");
+    const list = document.getElementById("list");
+    const empty = document.getElementById("empty");
+    const countEl = document.getElementById("count");
+
+    let items = load();
+
+    function load() {
+      try {
+        const raw = localStorage.getItem(KEY);
+        return raw ? JSON.parse(raw) : [];
+      } catch {
+        return [];
+      }
+    }
+
+    function save() {
+      localStorage.setItem(KEY, JSON.stringify(items));
+    }
+
+    function render() {
+      list.innerHTML = "";
+      items.forEach((item) => {
+        const li = document.createElement("li");
+        li.className = "item" + (item.done ? " done" : "");
+        li.dataset.id = item.id;
+
+        const text = document.createElement("span");
+        text.className = "text";
+        text.textContent = item.text;
+
+        const actions = document.createElement("div");
+        actions.className = "actions";
+
+        const doneBtn = document.createElement("button");
+        doneBtn.type = "button";
+        doneBtn.className = "done-btn";
+        doneBtn.setAttribute("aria-pressed", String(item.done));
+        doneBtn.textContent = item.done ? "撤销" : "完成";
+        doneBtn.addEventListener("click", () => toggle(item.id));
+
+        const delBtn = document.createElement("button");
+        delBtn.type = "button";
+        delBtn.className = "del-btn";
+        delBtn.textContent = "删除";
+        delBtn.addEventListener("click", () => remove(item.id));
+
+        actions.append(doneBtn, delBtn);
+        li.append(text, actions);
+        list.append(li);
+      });
+
+      const open = items.filter((i) => !i.done).length;
+      countEl.textContent = open + " 项未完成";
+      empty.hidden = items.length > 0;
+    }
+
+    function add(text) {
+      const t = text.trim();
+      if (!t) return;
+      items.unshift({ id: String(Date.now()), text: t, done: false });
+      save();
+      render();
+    }
+
+    function toggle(id) {
+      items = items.map((i) => (i.id === id ? { ...i, done: !i.done } : i));
+      save();
+      render();
+    }
+
+    function remove(id) {
+      items = items.filter((i) => i.id !== id);
+      save();
+      render();
+    }
+
+    form.addEventListener("submit", (e) => {
+      e.preventDefault();
+      add(input.value);
+      input.value = "";
+      input.focus();
+    });
+
+    render();
+  </script>
+</body>
+</html>
